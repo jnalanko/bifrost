@@ -1309,7 +1309,7 @@ bool CompactedDBG<U, G>::search(const vector<string>& query_filenames, const str
     fp.close();
 
     std::cerr << "Number of queries: " << n_queries_total << std::endl;
-    std::cerr << "Total query time ns/kmer without I/O: " << total_micros/(double)n_queries_total << std::endl;
+    std::cerr << "Total query time us/kmer without I/O: " << total_micros/(double)n_queries_total << std::endl;
 
     return true;
 }
