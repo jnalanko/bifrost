@@ -1,11 +1,12 @@
 #ifndef BIFROST_SEARCH_DBG_TCC
 #define BIFROST_SEARCH_DBG_TCC
 
+static long long n_queries_total = 0;
+
 template<typename U, typename G>
 vector<pair<size_t, UnitigMap<U, G>>> CompactedDBG<U, G>::searchSequence( const string& s, const bool exact, const bool insertion,
                                                                                 const bool deletion, const bool substitution,
                                                                                 const bool or_exclusive_match) {
-
     struct hash_pair {
 
         size_t operator()(const pair<size_t, Kmer>& p) const {
@@ -250,7 +251,6 @@ template<typename U, typename G>
 vector<pair<size_t, UnitigMap<U, G>>> CompactedDBG<U, G>::searchSequence(   const string& s, const bool exact, const bool insertion,
                                                                             const bool deletion, const bool substitution,
                                                                             const double ratio_kmers, const bool or_exclusive_match) {
-
     struct hash_pair {
 
         size_t operator()(const pair<size_t, Kmer>& p) const {
@@ -526,7 +526,6 @@ template<typename U, typename G>
 vector<pair<size_t, const_UnitigMap<U, G>>> CompactedDBG<U, G>::searchSequence( const string& s, const bool exact, const bool insertion,
                                                                                 const bool deletion, const bool substitution,
                                                                                 const bool or_exclusive_match) const {
-
     struct hash_pair {
 
         size_t operator()(const pair<size_t, Kmer>& p) const {
@@ -772,6 +771,8 @@ vector<pair<size_t, const_UnitigMap<U, G>>> CompactedDBG<U, G>::searchSequence( 
                                                                                 const bool deletion, const bool substitution,
                                                                                 const double ratio_kmers, const bool or_exclusive_match) const {
 
+    // The non-colored search is here
+
     struct hash_pair {
 
         size_t operator()(const pair<size_t, Kmer>& p) const {
@@ -822,7 +823,6 @@ vector<pair<size_t, const_UnitigMap<U, G>>> CompactedDBG<U, G>::searchSequence( 
 
         return (p1.first < p2.first);
     };
-
     auto worker_func = [&](const bool subst, const bool ins, const bool del, const size_t shift){
 
         const size_t ins_mask = static_cast<size_t>(!ins) - 1;
@@ -837,7 +837,6 @@ vector<pair<size_t, const_UnitigMap<U, G>>> CompactedDBG<U, G>::searchSequence( 
         const size_t k_1 = k_-1;
 
         auto processUnitigMap = [&](const const_UnitigMap<U, G>& um, const size_t pos_s){
-
             if (um.strand){
 
                 for (size_t j = um.dist; j < um.dist + um.len; ++j){
@@ -877,7 +876,6 @@ vector<pair<size_t, const_UnitigMap<U, G>>> CompactedDBG<U, G>::searchSequence( 
         };
 
         for (size_t i = 0; i != ((subst || ins) ? 4 : 1); ++i){
-
             if (ins) {
 
                 for (size_t j = shift; j < s_inexact_len; j += k_) s_inexact[j] = alpha[i];
@@ -940,7 +938,9 @@ vector<pair<size_t, const_UnitigMap<U, G>>> CompactedDBG<U, G>::searchSequence( 
 
                                 processUnitigMap(um, pos_s);
 
-                                if (rpos.cardinality() >= nb_km_min) return;
+                                if (rpos.cardinality() >= nb_km_min){
+                                    return;
+                                }
 
                                 ki_s += um.len - 1;
                             }
@@ -956,11 +956,12 @@ vector<pair<size_t, const_UnitigMap<U, G>>> CompactedDBG<U, G>::searchSequence( 
     if (exact){
 
         for (KmerIterator ki_s(s.c_str()), ki_e; ki_s != ki_e; ++ki_s) {
-
             const size_t pos_s = ki_s->second;
             const const_UnitigMap<U, G> um = findUnitig(s.c_str(), pos_s, s.length());
 
             if (!um.isEmpty) { // Read maps to a Unitig
+
+                n_queries_total += um.len; // All k-mers in this unitig count as queried
 
                 if (um.strand){
 
@@ -971,10 +972,13 @@ vector<pair<size_t, const_UnitigMap<U, G>>> CompactedDBG<U, G>::searchSequence( 
                     for (size_t j = um.dist; j < um.dist + um.len; ++j) v_um.push_back({pos_s + um.dist + um.len - j - 1, um.getKmerMapping(j)});
                 }
 
-                if (v_um.size() >= nb_km_min) return v_um;
+                if (v_um.size() >= nb_km_min){
+                    return v_um;
+                }
 
                 ki_s += um.len - 1;
             }
+            else n_queries_total++; // No hit -> counts as one k-mer
         }
 
         for (const auto& pum : v_um) {
@@ -1041,6 +1045,10 @@ vector<pair<size_t, const_UnitigMap<U, G>>> CompactedDBG<U, G>::searchSequence( 
     }
 
     return v_um;
+}
+
+static long long cur_time_micros(){
+    return (std::chrono::duration_cast< std::chrono::microseconds >(std::chrono::system_clock::now().time_since_epoch())).count();
 }
 
 template<typename U, typename G>
@@ -1112,6 +1120,8 @@ bool CompactedDBG<U, G>::search(const vector<string>& query_filenames, const str
     // Write header to TSV file
     out << "query_name\tpresence_query\n";
 
+    long long total_micros = 0;
+
     if (nb_threads == 1){
 
         char* buffer_res = new char[thread_seq_buf_sz];
@@ -1129,8 +1139,10 @@ bool CompactedDBG<U, G>::search(const vector<string>& query_filenames, const str
 
             for (auto& c : s) c &= 0xDF;
 
+            long long t = cur_time_micros();
             const vector<pair<size_t, const_UnitigMap<U, G>>> v = dbg.searchSequence(   s, true, inexact_search, inexact_search,
                                                                                         inexact_search, ratio_kmers, true);
+            total_micros += cur_time_micros() - t;
 
             if (inexact_search){
 
@@ -1295,6 +1307,9 @@ bool CompactedDBG<U, G>::search(const vector<string>& query_filenames, const str
 
     outfile.close();
     fp.close();
+
+    std::cerr << "Number of queries: " << n_queries_total << std::endl;
+    std::cerr << "Total query time ns/kmer without I/O: " << total_micros/(double)n_queries_total << std::endl;
 
     return true;
 }

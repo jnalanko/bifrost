@@ -3,10 +3,6 @@
 
 using namespace std;
 
-long long cur_time_millis(){
-    return (std::chrono::duration_cast< std::chrono::milliseconds >(std::chrono::system_clock::now().time_since_epoch())).count();
-}
-
 void PrintVersion() {
 
     cout << BFG_VERSION << endl;
@@ -644,10 +640,7 @@ int main(int argc, char **argv){
                     success = cdbg.read(opt.filename_graph_in, opt.nb_threads, opt.verbose);
 
                     if (success){
-                        long long start = cur_time_millis();
                         success = cdbg.search(opt.filename_query_in, opt.prefixFilenameOut, opt.ratio_kmers, opt.inexact_search, opt.nb_threads, opt.verbose);
-                        long long elapsed = cur_time_millis() - start;
-                        std::cerr << "Time for all queries: " << elapsed << " milliseconds" << std::endl;
                     }
                 }
             }
