@@ -608,9 +608,7 @@ bool check_ProgramOptions(CCDBG_Build_opt& opt) {
 
 double seconds_elapsed(const std::chrono::steady_clock::time_point& start,
                        const std::chrono::steady_clock::time_point& end) {
-
-    std::chrono::duration<double> elapsed = end - start;
-    return elapsed.count();
+    return std::chrono::duration<double>(end - start).count();
 }
 
 int main(int argc, char **argv){
