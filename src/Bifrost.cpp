@@ -1,5 +1,7 @@
 #include "CompactedDBG.hpp"
 #include "ColoredCDBG.hpp"
+#include "getRSS.h"
+#include <chrono>
 
 using namespace std;
 
@@ -606,6 +608,8 @@ bool check_ProgramOptions(CCDBG_Build_opt& opt) {
 
 int main(int argc, char **argv){
 
+    auto start = std::chrono::steady_clock::now();
+
     if (argc < 2) PrintUsage();
     else {
 
@@ -627,11 +631,17 @@ int main(int argc, char **argv){
 
                     ColoredCDBG<> ccdbg(opt.k, opt.g);
 
+                    auto now = std::chrono::steady_clock::now();
                     success = ccdbg.buildGraph(opt);
+                    std::chrono::duration<double> elapsed = now - start;
+                    cout << "After buildGraph: " << elapsed.count() << " seconds, " << getCurrentRSS() << " bytes RSS" << endl;
 
                     if (success) success = ccdbg.simplify(opt.deleteIsolated, opt.clipTips, opt.verbose);
+                    cout << "After simplify: " << elapsed.count() << " seconds, " << getCurrentRSS() << " bytes RSS" << endl;
                     if (success) success = ccdbg.buildColors(opt);
+                    cout << "After buildColors: " << elapsed.count() << " seconds, " << getCurrentRSS() << " bytes RSS" << endl;
                     if (success) success = ccdbg.write(opt.prefixFilenameOut, opt.nb_threads, opt.writeIndexFile, opt.compressOutput, opt.verbose);
+                    cout << "After write: " << elapsed.count() << " seconds, " << getCurrentRSS() << " bytes RSS" << endl;
                 }
                 else {
 
