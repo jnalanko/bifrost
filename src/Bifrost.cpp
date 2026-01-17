@@ -606,6 +606,13 @@ bool check_ProgramOptions(CCDBG_Build_opt& opt) {
     return ret;
 }
 
+double seconds_elapsed(const std::chrono::steady_clock::time_point& start,
+                       const std::chrono::steady_clock::time_point& end) {
+
+    std::chrono::duration<double> elapsed = end - start;
+    return elapsed.count();
+}
+
 int main(int argc, char **argv){
 
     auto start = std::chrono::steady_clock::now();
@@ -633,17 +640,17 @@ int main(int argc, char **argv){
 
                     success = ccdbg.buildGraph(opt);
                     auto now = std::chrono::steady_clock::now();
-                    cout << "After buildGraph: " << (now-start).count() << " seconds, " << getCurrentRSS() << " bytes RSS" << endl;
+                    cout << "After buildGraph: " << seconds_elapsed(start, now) << " seconds, " << getCurrentRSS() << " bytes RSS" << endl;
 
                     if (success) success = ccdbg.simplify(opt.deleteIsolated, opt.clipTips, opt.verbose);
                     now = std::chrono::steady_clock::now();
-                    cout << "After simplify: " << (now-start).count() << " seconds, " << getCurrentRSS() << " bytes RSS" << endl;
+                    cout << "After simplify: " << seconds_elapsed(start, now) << " seconds, " << getCurrentRSS() << " bytes RSS" << endl;
                     if (success) success = ccdbg.buildColors(opt);
                     now = std::chrono::steady_clock::now();
-                    cout << "After buildColors: " << (now-start).count() << " seconds, " << getCurrentRSS() << " bytes RSS" << endl;
+                    cout << "After buildColors: " << seconds_elapsed(start, now) << " seconds, " << getCurrentRSS() << " bytes RSS" << endl;
                     if (success) success = ccdbg.write(opt.prefixFilenameOut, opt.nb_threads, opt.writeIndexFile, opt.compressOutput, opt.verbose);
                     now = std::chrono::steady_clock::now();
-                    cout << "After write: " << (now-start).count() << " seconds, " << getCurrentRSS() << " bytes RSS" << endl;
+                    cout << "After write: " << seconds_elapsed(start, now) << " seconds, " << getCurrentRSS() << " bytes RSS" << endl;
                 }
                 else {
 
