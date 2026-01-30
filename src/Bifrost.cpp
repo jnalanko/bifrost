@@ -638,17 +638,17 @@ int main(int argc, char **argv){
 
                     success = ccdbg.buildGraph(opt);
                     auto now = std::chrono::steady_clock::now();
-                    cout << "After buildGraph: " << seconds_elapsed(start, now) << " seconds, " << getCurrentRSS() << " bytes RSS, peak " << getPeakRSS() << endl;
+                    cout << "After buildGraph: " << seconds_elapsed(start, now) << " seconds, " << getCurrentRSS() << " bytes RSS, peak " << getPeakRSS()*1024 << endl;
 
                     if (success) success = ccdbg.simplify(opt.deleteIsolated, opt.clipTips, opt.verbose);
                     now = std::chrono::steady_clock::now();
-                    cout << "After simplify: " << seconds_elapsed(start, now) << " seconds, " << getCurrentRSS() << " bytes RSS, peak " << getPeakRSS() << endl;
+                    cout << "After simplify: " << seconds_elapsed(start, now) << " seconds, " << getCurrentRSS() << " bytes RSS, peak " << getPeakRSS()*1024 << endl;
                     if (success) success = ccdbg.buildColors(opt);
                     now = std::chrono::steady_clock::now();
-                    cout << "After buildColors: " << seconds_elapsed(start, now) << " seconds, " << getCurrentRSS() << " bytes RSS, peak " << getPeakRSS() << endl;
+                    cout << "After buildColors: " << seconds_elapsed(start, now) << " seconds, " << getCurrentRSS() << " bytes RSS, peak " << getPeakRSS()*1024 << endl;
                     if (success) success = ccdbg.write(opt.prefixFilenameOut, opt.nb_threads, opt.writeIndexFile, opt.compressOutput, opt.verbose);
                     now = std::chrono::steady_clock::now();
-                    cout << "After write: " << seconds_elapsed(start, now) << " seconds, " << getCurrentRSS() << " bytes RSS, peak " << getPeakRSS() << endl;
+                    cout << "After write: " << seconds_elapsed(start, now) << " seconds, " << getCurrentRSS() << " bytes RSS, peak " << getPeakRSS()*1024 << endl;
                 }
                 else {
 
